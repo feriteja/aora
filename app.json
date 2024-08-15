@@ -1,6 +1,7 @@
 {
   "expo": {
-    "name": "aora",
+    "name": "Aora",
+    "schema":"aora",
     "slug": "aora",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -13,13 +14,15 @@
       "backgroundColor": "#ffffff"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "package" : "com.synfs.aora"
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#ffffff"
-      }
+      },
+      "package" : "com.synfs.aora"
     },
     "web": {
       "bundler": "metro",
