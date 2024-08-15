@@ -35,13 +35,14 @@ declare type Bookmark = {
 };
 
 declare type VideoCardProps = {
-  postId: string;
+  postId?: string;
   title: string;
   creator: string;
   avatar: string;
   thumbnail: string;
   video: string;
   isBookmarked?: boolean;
+  hideBookMark?: boolean;
 };
 
 declare type BookmarkModel = Bookmark & Models.Document;

@@ -10,7 +10,7 @@ import { EmptyState, InfoBox, VideoCard } from "../../components";
 
 const Profile = () => {
   const { user, setUser, setIsLogged } = useGlobalContext();
-  const { data: posts } = useAppwrite(() => getUserPosts(user.$id));
+  const { data: posts } = useAppwrite(() => getUserPosts(user!.$id));
 
   const logout = async () => {
     await signOut();
@@ -32,6 +32,7 @@ const Profile = () => {
             video={item.video}
             creator={item.creator.username}
             avatar={item.creator.avatar}
+            hideBookMark={true}
           />
         )}
         ListEmptyComponent={() => (
@@ -59,7 +60,7 @@ const Profile = () => {
             </View>
 
             <InfoBox
-              title={user?.username}
+              title={user!.username}
               containerStyles="mt-5"
               titleStyles="text-lg"
             />

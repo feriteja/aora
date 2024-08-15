@@ -1,8 +1,8 @@
 import { View, Text } from "react-native";
 
 type InfoBoxProps = {
-  title: string;
-  subtitle: string;
+  title: string | number;
+  subtitle?: string;
   containerStyles?: string;
   titleStyles?: string;
 };

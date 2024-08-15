@@ -20,6 +20,7 @@ const VideoCard = ({
   thumbnail,
   video,
   isBookmarked,
+  hideBookMark = false,
 }: VideoCardProps) => {
   const [play, setPlay] = useState(false);
   const { user } = useGlobalContext();
@@ -28,7 +29,7 @@ const VideoCard = ({
   const onBookmarkHandler = async () => {
     try {
       setIsBookmarkedState((prev) => !prev);
-      const result = await handleVideoBookmark(user?.$id!, postId);
+      const result = await handleVideoBookmark(user?.$id!, postId!);
       setIsBookmarkedState(result);
     } catch (error: any) {
       throw new Error(error);
@@ -63,16 +64,18 @@ const VideoCard = ({
           </View>
         </View>
 
-        <Pressable
-          onPress={onBookmarkHandler}
-          className="pt-2 active:opacity-70"
-        >
-          {isBookmarkedState ? (
-            <FontAwesome name="bookmark" size={28} color="white" />
-          ) : (
-            <FontAwesome name="bookmark-o" size={28} color="white" />
-          )}
-        </Pressable>
+        {!hideBookMark && (
+          <Pressable
+            onPress={onBookmarkHandler}
+            className="pt-2 active:opacity-70"
+          >
+            {isBookmarkedState ? (
+              <FontAwesome name="bookmark" size={28} color="white" />
+            ) : (
+              <FontAwesome name="bookmark-o" size={28} color="white" />
+            )}
+          </Pressable>
+        )}
       </View>
 
       {play ? (
