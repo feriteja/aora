@@ -6,7 +6,7 @@ type AsyncFunction<T> = () => Promise<T>;
 interface UseAppwriteReturn<T> {
   data: T | null;
   loading: boolean;
-  refetch: () => void;
+  refetch: () => Promise<void>;
 }
 
 function useAppwrite<T>(fn: AsyncFunction<T>): UseAppwriteReturn<T> {
@@ -17,7 +17,7 @@ function useAppwrite<T>(fn: AsyncFunction<T>): UseAppwriteReturn<T> {
     setLoading(true);
     try {
       const res = await fn();
-      setData(res);
+      setData((_) => res);
     } catch (error: any) {
       Alert.alert("Error", error.message);
     } finally {
@@ -29,7 +29,7 @@ function useAppwrite<T>(fn: AsyncFunction<T>): UseAppwriteReturn<T> {
     fetchData();
   }, []);
 
-  const refetch = () => fetchData();
+  const refetch = async () => await fetchData();
 
   return { data, loading, refetch };
 }

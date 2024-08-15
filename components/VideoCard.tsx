@@ -1,14 +1,42 @@
 import { useState } from "react";
-import { ResizeMode, Video } from "expo-av";
+import {
+  AVPlaybackStatus,
+  AVPlaybackStatusSuccess,
+  ResizeMode,
+  Video,
+} from "expo-av";
 import { View, Text, Pressable, Image } from "react-native";
+import FontAwesome from "@expo/vector-icons/FontAwesome";
 
 import { icons } from "../constants";
+import { handleVideoBookmark } from "@/lib/appwrite";
+import { useGlobalContext } from "@/context/GlobalProvider";
 
-const VideoCard = ({ title, creator, avatar, thumbnail, video }) => {
+const VideoCard = ({
+  postId,
+  title,
+  creator,
+  avatar,
+  thumbnail,
+  video,
+  isBookmarked,
+}: VideoCardProps) => {
   const [play, setPlay] = useState(false);
+  const { user } = useGlobalContext();
+  const [isBookmarkedState, setIsBookmarkedState] = useState(isBookmarked);
+
+  const onBookmarkHandler = async () => {
+    try {
+      setIsBookmarkedState((prev) => !prev);
+      const result = await handleVideoBookmark(user?.$id!, postId);
+      setIsBookmarkedState(result);
+    } catch (error: any) {
+      throw new Error(error);
+    }
+  };
 
   return (
-    <View className="flex flex-col items-center px-4 mb-14">
+    <View className="flex flex-col items-center px-4 mb-14 border-b-2 border-red-500">
       <View className="flex flex-row gap-3 items-start">
         <View className="flex justify-center items-center flex-row flex-1">
           <View className="w-[46px] h-[46px] rounded-lg border border-secondary flex justify-center items-center p-0.5">
@@ -35,9 +63,16 @@ const VideoCard = ({ title, creator, avatar, thumbnail, video }) => {
           </View>
         </View>
 
-        <View className="pt-2">
-          <Image source={icons.menu} className="w-5 h-5" resizeMode="contain" />
-        </View>
+        <Pressable
+          onPress={onBookmarkHandler}
+          className="pt-2 active:opacity-70"
+        >
+          {isBookmarkedState ? (
+            <FontAwesome name="bookmark" size={28} color="white" />
+          ) : (
+            <FontAwesome name="bookmark-o" size={28} color="white" />
+          )}
+        </Pressable>
       </View>
 
       {play ? (
@@ -47,17 +82,19 @@ const VideoCard = ({ title, creator, avatar, thumbnail, video }) => {
           resizeMode={ResizeMode.CONTAIN}
           useNativeControls
           shouldPlay
-          onPlaybackStatusUpdate={(status) => {
-            if (status.didJustFinish) {
+          onPlaybackStatusUpdate={(status: AVPlaybackStatus) => {
+            if (
+              status.isLoaded &&
+              (status as AVPlaybackStatusSuccess).didJustFinish
+            ) {
               setPlay(false);
             }
           }}
         />
       ) : (
         <Pressable
-          activeOpacity={0.7}
           onPress={() => setPlay(true)}
-          className="w-full h-60 rounded-xl mt-3 relative flex justify-center items-center"
+          className="w-full h-60 active:opacity-70 rounded-xl mt-3 relative flex justify-center items-center"
         >
           <Image
             source={{ uri: thumbnail }}

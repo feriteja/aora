@@ -1,4 +1,3 @@
-import { File } from "buffer";
 import {
   Account,
   Avatars,
@@ -8,6 +7,7 @@ import {
   ImageGravity,
   Query,
   Storage,
+  Models,
 } from "react-native-appwrite";
 
 export const appwriteConfig = {
@@ -16,11 +16,10 @@ export const appwriteConfig = {
   projectId: process.env.EXPO_PUBLIC_APPWRITE_PROJECTID,
   storageId: process.env.EXPO_PUBLIC_APPWRITE_STORAGEID,
   databaseId: process.env.EXPO_PUBLIC_APPWRITE_DATABASEID,
-  userCollectionId: process.env.EXPO_PUBLIC_APPWRITE_USER_COLLECTION_ID,
+  bookmarkCollectionId: process.env.EXPO_PUBLIC_APPWRITE_BOOKMARK_COLLECTION_ID,
   videoCollectionId: process.env.EXPO_PUBLIC_APPWRITE_VIDEO_COLLECTION_ID,
+  userCollectionId: process.env.EXPO_PUBLIC_APPWRITE_USER_COLLECTION_ID,
 };
-
-console.log({ appwriteConfig });
 
 const client = new Client();
 
@@ -73,7 +72,7 @@ export async function createUser(
 }
 
 // Sign In
-export async function signIn(email, password) {
+export async function signIn(email: string, password: string) {
   try {
     const session = await account.createEmailPasswordSession(email, password);
 
@@ -127,7 +126,7 @@ export async function signOut() {
 }
 
 // Upload File
-export async function uploadFile(file: File, type: "video" | "image") {
+export async function uploadFile(file: any, type: FileType) {
   if (!file) return;
 
   const { mimeType, ...rest } = file;
@@ -148,7 +147,7 @@ export async function uploadFile(file: File, type: "video" | "image") {
 }
 
 // Get File Preview
-export async function getFilePreview(fileId, type) {
+export async function getFilePreview(fileId: string, type: FileType) {
   let fileUrl;
 
   try {
@@ -203,15 +202,15 @@ export async function createVideoPost(form) {
 }
 
 // Get all video Posts
-export async function getAllPosts(): Promise<Post[]> {
+export async function getAllPosts(): Promise<(Post & Models.Document)[]> {
   try {
-    const posts = await databases.listDocuments(
+    const posts = await databases.listDocuments<Post & Models.Document>(
       appwriteConfig.databaseId,
       appwriteConfig.videoCollectionId,
       [(Query.orderDesc("$createdAt"), Query.limit(10))]
     );
 
-    return posts.documents as unknown as Post[];
+    return posts.documents;
   } catch (error: any) {
     throw new Error(error);
   }
@@ -259,6 +258,141 @@ export async function getLatestPosts(): Promise<Post[]> {
     );
 
     return posts.documents as unknown as Post[];
+  } catch (error: any) {
+    throw new Error(error);
+  }
+}
+
+type BookmarkType = Models.DocumentList<Bookmark & Models.Document>;
+
+async function createVideoBookmark(userId: string, videoId: string) {
+  try {
+    // If no document exists, create a new one
+    await databases.createDocument<Bookmark & Models.Document>(
+      appwriteConfig.databaseId,
+      appwriteConfig.bookmarkCollectionId,
+      ID.unique(),
+      {
+        user: userId,
+        videos: [videoId],
+      }
+    );
+  } catch (error) {}
+}
+
+async function addVideoToBookmark(response: BookmarkType, videoId: string) {
+  try {
+    let document: Bookmark & Models.Document;
+
+    // If document exists, take the first one
+    document = response.documents[0];
+
+    // Check if the videoId is already in the videos array
+    const updatedVideos = document.videos.includes(videoId)
+      ? document.videos
+      : [...document.videos, videoId];
+
+    // Update the document with the new videos array
+    const updatedDocument = await databases.updateDocument<
+      Bookmark & Models.Document
+    >(
+      appwriteConfig.databaseId,
+      appwriteConfig.bookmarkCollectionId,
+      document.$id,
+      {
+        videos: updatedVideos,
+      }
+    );
+  } catch (error: any) {
+    throw new Error(error);
+  }
+}
+
+async function removeVideoFromBookmark(
+  response: BookmarkType,
+  videoId: string
+) {
+  try {
+    // Query for documents where the 'user' field matches the provided userId
+
+    if (response.documents.length > 0) {
+      // If document exists, take the first one
+      const document = response.documents[0];
+
+      // Remove the videoId from the videos array
+      const updatedVideos = document.videos.filter((video) => {
+        return video.$id !== videoId;
+      });
+
+      if (updatedVideos.length === document.videos.length) {
+        console.log("Video ID not found in bookmark.");
+        return;
+      }
+
+      // Update the document with the new videos array
+      await databases.updateDocument<Bookmark & Models.Document>(
+        appwriteConfig.databaseId,
+        appwriteConfig.bookmarkCollectionId,
+        document.$id,
+        {
+          videos: updatedVideos,
+        }
+      );
+    } else {
+    }
+  } catch (error: any) {
+    throw new Error(error);
+  }
+}
+
+export async function handleVideoBookmark(userId: string, videoId: string) {
+  try {
+    const isDocExist = await databases.listDocuments<
+      Bookmark & Models.Document
+    >(appwriteConfig.databaseId, appwriteConfig.bookmarkCollectionId, [
+      Query.equal("user", userId),
+    ]);
+
+    console.log({ checkLength: isDocExist.documents.length > 0 });
+
+    if (isDocExist.documents.length > 0) {
+      const document = isDocExist.documents[0];
+
+      // Check if the videoId is already in the videos array
+      const videoIds = document.videos.map((video) => video.$id);
+      console.log({ videoId });
+
+      const isVideoExist = videoIds.includes(videoId);
+
+      if (!isVideoExist) {
+        addVideoToBookmark(isDocExist, videoId);
+        console.log("berhasil tambah bookmark");
+        return true;
+      }
+      removeVideoFromBookmark(isDocExist, videoId);
+      console.log("berhasil hapus bookmark");
+      return false;
+    } else {
+      createVideoBookmark(userId, videoId);
+      console.log("berhasil tambah bookmark");
+      return true;
+    }
+  } catch (error: any) {
+    throw new Error(error);
+  }
+}
+
+export async function getBookmarkPosts(
+  userId: string
+): Promise<(Bookmark & Models.Document)[]> {
+  try {
+    const bookmark = await databases.listDocuments<Bookmark & Models.Document>(
+      appwriteConfig.databaseId,
+      appwriteConfig.bookmarkCollectionId,
+      [Query.equal("user", userId)]
+    );
+
+    return bookmark.documents;
   } catch (error: any) {
     throw new Error(error);
   }

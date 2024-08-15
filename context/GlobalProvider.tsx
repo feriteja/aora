@@ -11,7 +11,7 @@ import { getCurrentUser } from "../lib/appwrite";
 interface GlobalContextType {
   isLogged: boolean;
   setIsLogged: React.Dispatch<React.SetStateAction<boolean>>;
-  user: any | null;
+  user: UserModel | null;
   setUser: React.Dispatch<React.SetStateAction<any | null>>;
   loading: boolean;
 }

@@ -4,11 +4,18 @@ import { FlatList, Image, RefreshControl, Text, View } from "react-native";
 
 import { images } from "../../constants";
 import useAppwrite from "../../lib/useAppwrite";
-import { getAllPosts, getLatestPosts } from "../../lib/appwrite";
+import {
+  getAllPosts,
+  getLatestPosts,
+  handleVideoBookmark,
+} from "../../lib/appwrite";
 import { EmptyState, SearchInput, Trending, VideoCard } from "../../components";
+import { useGlobalContext } from "@/context/GlobalProvider";
+import { ID, Models } from "react-native-appwrite";
 
 const Home = () => {
-  const { data: posts, refetch } = useAppwrite<Post[]>(getAllPosts);
+  const { user } = useGlobalContext();
+  const { data: posts, refetch } = useAppwrite(getAllPosts);
   const { data: latestPosts } = useAppwrite(getLatestPosts);
 
   const [refreshing, setRefreshing] = useState(false);
@@ -30,15 +37,22 @@ const Home = () => {
       <FlatList
         data={posts}
         keyExtractor={(item) => item.$id!}
-        renderItem={({ item }) => (
-          <VideoCard
-            title={item.title}
-            thumbnail={item.thumbnail}
-            video={item.video}
-            creator={item.creator.username}
-            avatar={item.creator.avatar}
-          />
-        )}
+        key={ID.unique()}
+        renderItem={({ item }) => {
+          const isBookmarked = user?.$id === item.bookmark[0]?.user?.$id;
+
+          return (
+            <VideoCard
+              postId={item.$id!}
+              title={item.title}
+              thumbnail={item.thumbnail}
+              video={item.video}
+              creator={item.creator.username}
+              avatar={item.creator.avatar}
+              isBookmarked={isBookmarked}
+            />
+          );
+        }}
         ListHeaderComponent={() => (
           <View className="flex my-6 px-4 space-y-6">
             <View className="flex justify-between items-start flex-row mb-6">

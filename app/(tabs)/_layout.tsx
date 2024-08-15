@@ -1,12 +1,25 @@
 import { StatusBar } from "expo-status-bar";
 import { Redirect, Tabs } from "expo-router";
-import { Image, Text, View } from "react-native";
+import {
+  ColorValue,
+  Image,
+  ImageSourcePropType,
+  Text,
+  View,
+} from "react-native";
 
 import { icons } from "../../constants";
 import { Loader } from "../../components";
 import { useGlobalContext } from "../../context/GlobalProvider";
 
-const TabIcon = ({ icon, color, name, focused }) => {
+type TabIconProps = {
+  icon: ImageSourcePropType;
+  color: ColorValue;
+  name: string;
+  focused: boolean;
+};
+
+const TabIcon = ({ icon, color, name, focused }: TabIconProps) => {
   return (
     <View className="flex items-center justify-center gap-2">
       <Image
